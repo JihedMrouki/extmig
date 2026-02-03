@@ -18,6 +18,7 @@ import {
   checkCLIAvailable,
   CLIExecutionError,
 } from './cli.js';
+import { isIDERunning, getCloseIDEMessage } from './process-check.js';
 
 /**
  * Installation options
@@ -81,14 +82,15 @@ export interface SyncContext {
 }
 
 /**
- * Install a single extension
+ * Install a single extension with retry logic
  */
 async function installSingleExtension(
   targetIDE: IDEType,
   extensionId: string,
   sourceVersion: string,
   targetMarketplace: MarketplaceType,
-  options: Required<InstallOptions>
+  options: Required<InstallOptions>,
+  retryCount: number = 0
 ): Promise<SyncResult> {
   const baseResult: Omit<SyncResult, 'status' | 'error'> = {
     extensionId,
@@ -132,10 +134,42 @@ async function installSingleExtension(
         };
       }
 
+      // Retry on timeout or network errors (max 2 retries)
+      const shouldRetry = retryCount < 2 && (
+        error.message.includes('timeout') ||
+        error.message.includes('ETIMEDOUT') ||
+        error.message.includes('ECONNRESET') ||
+        error.message.includes('network')
+      );
+
+      if (shouldRetry) {
+        // Wait a bit before retry (exponential backoff)
+        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return installSingleExtension(
+          targetIDE,
+          extensionId,
+          sourceVersion,
+          targetMarketplace,
+          options,
+          retryCount + 1
+        );
+      }
+
+      // Provide more helpful error messages
+      let errorMessage = error.message;
+      if (error.message.includes('not found')) {
+        errorMessage = `Extension not found on ${targetMarketplace} marketplace`;
+      } else if (error.message.includes('timeout')) {
+        errorMessage = `Installation timeout (took longer than ${options.timeout}ms). Try closing the IDE and running again.`;
+      } else if (error.stderr) {
+        errorMessage = error.stderr;
+      }
+
       return {
         ...baseResult,
         status: 'failed',
-        error: error.message,
+        error: errorMessage,
       };
     }
 
@@ -288,6 +322,15 @@ export async function syncFromDiff(
     );
   }
 
+  // Warn if IDE is running (not blocking, just a warning)
+  if (!opts.dryRun) {
+    const isRunning = await isIDERunning(diffReport.targetIDE);
+    if (isRunning) {
+      console.warn(`\n${getCloseIDEMessage(diffReport.targetIDE)}`);
+      console.warn('Some extensions may fail to install while the IDE is running.\n');
+    }
+  }
+
   // Create context
   const context: SyncContext = {
     sourceIDE: diffReport.sourceIDE,
@@ -359,13 +402,20 @@ export function printSyncSummary(report: SyncReport): void {
   // Show details for failed installations
   const failedResults = summary.results.filter(r => r.status === 'failed');
   if (failedResults.length > 0 && !summary.dryRun) {
-    console.log(`\nFailed Installations:`);
+    console.log(`\n❌ Failed Installations:`);
     for (const result of failedResults) {
       console.log(`  ✗ ${result.extensionId}`);
       if (result.error) {
-        console.log(`     Error: ${result.error}`);
+        console.log(`     ${result.error}`);
       }
     }
+
+    // Helpful suggestions
+    console.log(`\n💡 Troubleshooting Tips:`);
+    console.log(`  1. Close ${context.targetIDE} completely and try again`);
+    console.log(`  2. Some extensions may not be available on ${context.targetMarketplace}`);
+    console.log(`  3. Check your internet connection`);
+    console.log(`  4. After installation, restart ${context.targetIDE} to activate extensions`);
   }
 
   // Show successful installations (first 5)
@@ -402,3 +452,8 @@ export {
   getIDEVersion,
   CLIExecutionError,
 } from './cli.js';
+
+export {
+  isIDERunning,
+  getCloseIDEMessage,
+} from './process-check.js';

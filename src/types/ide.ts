@@ -9,6 +9,7 @@ export const IDETypeSchema = z.enum([
   'vscodium',         // VSCodium
   'cursor',           // Cursor
   'code-oss',         // Code - OSS
+  'antigravity',      // AntiGravity
 ]);
 
 export type IDEType = z.infer<typeof IDETypeSchema>;

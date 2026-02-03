@@ -21,7 +21,7 @@ export async function syncCommand(
 ) {
   try {
     // Validate IDE types
-    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss'];
+    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity'];
     if (!validIDEs.includes(sourceIDE) || !validIDEs.includes(targetIDE)) {
       console.error('Error: Invalid IDE type');
       console.error(`Valid options: ${validIDEs.join(', ')}`);

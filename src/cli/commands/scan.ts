@@ -12,7 +12,7 @@ export interface ScanOptions {
 export async function scanCommand(ideType: string, options: ScanOptions) {
   try {
     // Validate IDE type
-    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss'];
+    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity'];
     if (!validIDEs.includes(ideType)) {
       console.error(`Error: Invalid IDE type "${ideType}"`);
       console.error(`Valid options: ${validIDEs.join(', ')}`);
@@ -32,8 +32,8 @@ export async function scanCommand(ideType: string, options: ScanOptions) {
     } else {
       console.log(`\nFound ${result.extensions.length} extension(s) in ${ideType}:\n`);
       result.extensions.forEach((ext, index) => {
-        console.log(`${index + 1}. ${ext.displayName || ext.extensionId}`);
-        console.log(`   ID: ${ext.extensionId}`);
+        console.log(`${index + 1}. ${ext.displayName || ext.id}`);
+        console.log(`   ID: ${ext.id}`);
         console.log(`   Version: ${ext.version}`);
         if (ext.publisher) {
           console.log(`   Publisher: ${ext.publisher}`);

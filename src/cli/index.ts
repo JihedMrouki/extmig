@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * extsync CLI
+ * extmig CLI
  * Synchronize VS Code extensions across VS Code-based IDEs
  */
 
@@ -9,39 +9,42 @@ import { Command } from 'commander';
 import { scanCommand } from './commands/scan.js';
 import { diffCommand } from './commands/diff.js';
 import { syncCommand } from './commands/sync.js';
+import { exportCommand } from './commands/export.js';
+import { importCommand } from './commands/import.js';
+import { listIDEsCommand } from './commands/list-ides.js';
 
 const program = new Command();
 
 program
-  .name('extsync')
+  .name('extmig')
   .description('Synchronize VS Code extensions across VS Code-based IDEs')
   .version('0.1.0');
 
+// List IDEs command
+program
+  .command('list')
+  .description('List available VS Code-based IDEs on the system')
+  .action(listIDEsCommand);
+
 // Scan command
 program
-  .command('scan')
+  .command('scan <ide>')
   .description('Scan and list installed extensions from an IDE')
-  .argument('<ide>', 'IDE to scan (vscode, vscodium, cursor, code-oss)')
   .option('-j, --json', 'Output as JSON')
   .action(scanCommand);
 
 // Diff command
 program
-  .command('diff')
+  .command('diff <source> <target>')
   .description('Compare extensions between two IDEs')
-  .argument('<source>', 'Source IDE (vscode, vscodium, cursor, code-oss)')
-  .argument('<target>', 'Target IDE (vscode, vscodium, cursor, code-oss)')
   .option('-m, --marketplace <type>', 'Target marketplace (openvsx, vscode)', 'openvsx')
   .option('-j, --json', 'Output as JSON')
-  .option('--fast', 'Skip marketplace availability checks (faster)')
   .action(diffCommand);
 
 // Sync command
 program
-  .command('sync')
+  .command('sync <source> <target>')
   .description('Sync extensions from source to target IDE')
-  .argument('<source>', 'Source IDE (vscode, vscodium, cursor, code-oss)')
-  .argument('<target>', 'Target IDE (vscode, vscodium, cursor, code-oss)')
   .option('-m, --marketplace <type>', 'Target marketplace (openvsx, vscode)', 'openvsx')
   .option('--no-dry-run', 'Actually install extensions (default is dry-run)')
   .option('-c, --concurrency <n>', 'Number of concurrent installations', '3')
@@ -49,6 +52,28 @@ program
   .option('-f, --force', 'Force reinstall even if already installed')
   .action((source, target, options) => {
     syncCommand(source, target, {
+      ...options,
+      concurrency: parseInt(options.concurrency, 10),
+    });
+  });
+
+// Export command
+program
+  .command('export <ide>')
+  .description('Export extension list to a JSON file')
+  .option('-o, --output <file>', 'Output file path')
+  .option('--no-pretty', 'Minify JSON output')
+  .action(exportCommand);
+
+// Import command
+program
+  .command('import <file> <target>')
+  .description('Import and install extensions from a JSON file')
+  .option('--no-dry-run', 'Actually install extensions (default is dry-run)')
+  .option('-c, --concurrency <n>', 'Number of concurrent installations', '3')
+  .option('-f, --force', 'Force reinstall even if already installed')
+  .action((file, target, options) => {
+    importCommand(file, target, {
       ...options,
       concurrency: parseInt(options.concurrency, 10),
     });

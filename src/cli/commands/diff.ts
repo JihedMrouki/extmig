@@ -8,7 +8,6 @@ import type { IDEType, MarketplaceType } from '../../types/index.js';
 export interface DiffOptions {
   marketplace?: string;
   json?: boolean;
-  fast?: boolean;
 }
 
 export async function diffCommand(
@@ -18,7 +17,7 @@ export async function diffCommand(
 ) {
   try {
     // Validate IDE types
-    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss'];
+    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity'];
     if (!validIDEs.includes(sourceIDE) || !validIDEs.includes(targetIDE)) {
       console.error('Error: Invalid IDE type');
       console.error(`Valid options: ${validIDEs.join(', ')}`);
@@ -40,7 +39,6 @@ export async function diffCommand(
     const result = await diffIDEs(sourceIDE as IDEType, targetIDE as IDEType, {
       targetMarketplace: marketplace,
       fallbackMarketplaces: marketplace === 'openvsx' ? ['vscode'] : ['openvsx'],
-      fast: options.fast,
     });
 
     if (options.json) {

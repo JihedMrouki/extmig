@@ -89,6 +89,22 @@ const IDE_CONFIGS: Record<IDEType, Omit<IDE, 'detected' | 'version' | 'cliPath'>
       win32: [path.join(os.homedir(), '.vscode-oss\\extensions')],
     },
   },
+  antigravity: {
+    type: 'antigravity',
+    name: 'AntiGravity',
+    defaultMarketplace: 'openvsx',
+    cliCommand: 'antigravity',
+    installPaths: {
+      darwin: ['/Applications/Antigravity.app', path.join(os.homedir(), '.antigravity/antigravity')],
+      linux: ['/usr/share/antigravity', '/usr/bin/antigravity', path.join(os.homedir(), '.antigravity/antigravity')],
+      win32: ['C:\\Program Files\\AntiGravity', path.join(os.homedir(), '.antigravity\\antigravity')],
+    },
+    extensionsPaths: {
+      darwin: [path.join(os.homedir(), '.antigravity/extensions')],
+      linux: [path.join(os.homedir(), '.antigravity/extensions')],
+      win32: [path.join(os.homedir(), '.antigravity\\extensions')],
+    },
+  },
 };
 
 /**
@@ -196,7 +212,7 @@ export async function detectIDE(ideType: IDEType): Promise<IDEDetectionResult> {
  * Detect all installed IDEs
  */
 export async function detectAllIDEs(): Promise<IDEDetectionResult[]> {
-  const ideTypes: IDEType[] = ['vscode', 'vscodium', 'cursor', 'code-oss'];
+  const ideTypes: IDEType[] = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity'];
 
   const detectionPromises = ideTypes.map(type => detectIDE(type));
   const results = await Promise.all(detectionPromises);

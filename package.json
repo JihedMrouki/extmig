@@ -1,18 +1,23 @@
 {
-  "name": "extsync",
+  "name": "extmig",
   "version": "0.1.0",
   "description": "Synchronize VS Code extensions across VS Code-based IDEs using different marketplaces",
   "main": "dist/index.js",
   "type": "module",
+  "bin": {
+    "extmig": "./bin/extmig.js"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "start": "npm run build && node bin/extmig.js",
     "demo": "npm run demo:phase5",
     "demo:phase1": "npm run build && node dist/examples/phase1-demo.js",
     "demo:phase2": "npm run build && node dist/examples/phase2-demo.js",
     "demo:phase3": "npm run build && node dist/examples/phase3-demo.js",
     "demo:phase4": "npm run build && node dist/examples/phase4-demo.js",
     "demo:phase5": "npm run build && node dist/examples/phase5-demo.js",
+    "cli": "npm run build && node bin/extmig.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -28,11 +33,15 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "chalk": "^5.6.2",
     "commander": "^14.0.3",
+    "ora": "^9.1.0",
+    "prompts": "^2.4.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.2.0",
+    "@types/prompts": "^2.4.9",
     "typescript": "^5.9.3"
   }
 }
