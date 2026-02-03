@@ -29,19 +29,19 @@
 
 ### VS Code-based
 
-| IDE | Identifier | Default Marketplace |
-|---|---|---|
-| Visual Studio Code | `vscode` | vscode |
-| Cursor | `cursor` | vscode |
-| VSCodium | `vscodium` | openvsx |
-| Code - OSS | `code-oss` | openvsx |
-| AntiGravity | `antigravity` | openvsx |
+| IDE                | Identifier    | Default Marketplace |
+| ------------------ | ------------- | ------------------- |
+| Visual Studio Code | `vscode`      | vscode              |
+| Cursor             | `cursor`      | vscode              |
+| VSCodium           | `vscodium`    | openvsx             |
+| Code - OSS         | `code-oss`    | openvsx             |
+| AntiGravity        | `antigravity` | openvsx             |
 
 ### JetBrains
 
-| IDE | Identifier | Notes |
-|---|---|---|
-| IntelliJ IDEA | `intellij` | Scan source only |
+| IDE            | Identifier      | Notes            |
+| -------------- | --------------- | ---------------- |
+| IntelliJ IDEA  | `intellij`      | Scan source only |
 | Android Studio | `androidstudio` | Scan source only |
 
 - Versioned config directories (e.g. `IntelliJIdea2024.3/plugins/`) are resolved automatically — latest version is picked
@@ -50,11 +50,11 @@
 
 ## Supported Marketplaces
 
-| Marketplace | Identifier | Role |
-|---|---|---|
-| Microsoft Marketplace | `vscode` | Query + install target |
-| Open VSX Registry | `openvsx` | Query + install target |
-| JetBrains (local) | `jetbrains` | Scan source only |
+| Marketplace           | Identifier  | Role                   |
+| --------------------- | ----------- | ---------------------- |
+| Microsoft Marketplace | `vscode`    | Query + install target |
+| Open VSX Registry     | `openvsx`   | Query + install target |
+| JetBrains (local)     | `jetbrains` | Scan source only       |
 
 ---
 
@@ -97,6 +97,12 @@ extmig <command> [options]
 ---
 
 ## Usage
+
+Run Interactive mode with this command (recommended)
+
+```bash
+extmig
+```
 
 ### List detected IDEs
 
@@ -156,12 +162,12 @@ extmig sync intellij vscode --no-dry-run
 
 #### Sync flags
 
-| Flag | Default | Description |
-|---|---|---|
-| `--no-dry-run` | dry-run on | Actually run installations |
-| `-c, --concurrency <n>` | 3 | Parallel installations |
-| `-f, --force` | off | Reinstall even if already present |
-| `--no-skip-unavailable` | skip on | Fail if any extension is unavailable |
+| Flag                       | Default         | Description                                  |
+| -------------------------- | --------------- | -------------------------------------------- |
+| `--no-dry-run`             | dry-run on      | Actually run installations                   |
+| `-c, --concurrency <n>`    | 3               | Parallel installations                       |
+| `-f, --force`              | off             | Reinstall even if already present            |
+| `--no-skip-unavailable`    | skip on         | Fail if any extension is unavailable         |
 | `-m, --marketplace <type>` | target's native | Override marketplace for availability checks |
 
 ---
