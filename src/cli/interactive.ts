@@ -8,27 +8,12 @@
 import prompts from 'prompts';
 import chalk from 'chalk';
 import ora from 'ora';
+import { showBanner } from './banner.js';
 import { scanIDE } from '../core/scanner/index.js';
 import { diffIDEs } from '../core/diff/index.js';
 import { syncFromDiff } from '../core/installer/index.js';
 import { checkCLIAvailable, isIDERunning, getCloseIDEMessage } from '../core/installer/index.js';
 import type { IDEType, MarketplaceType } from '../types/index.js';
-
-// Welcome screen
-function showWelcome() {
-  console.clear();
-  console.log(chalk.bold.cyan('\n╔═══════════════════════════════════════════════════════╗'));
-  console.log(chalk.bold.cyan('║                                                       ║'));
-  console.log(chalk.bold.cyan('║') + chalk.bold.white('              🚀  extmig  🚀                      ') + chalk.bold.cyan('║'));
-  console.log(chalk.bold.cyan('║                                                       ║'));
-  console.log(chalk.bold.cyan('╚═══════════════════════════════════════════════════════╝'));
-  console.log();
-  console.log(chalk.white('  Synchronize VS Code extensions across different IDEs'));
-  console.log(chalk.gray('  Supports: VS Code, VSCodium, Cursor, Code-OSS, AntiGravity'));
-  console.log();
-  console.log(chalk.gray('  ────────────────────────────────────────────────────────'));
-  console.log();
-}
 
 // Detect available IDEs
 async function detectIDEs(): Promise<IDEType[]> {
@@ -429,7 +414,8 @@ async function manualMode() {
 
 // Main interactive flow
 async function main() {
-  showWelcome();
+  console.clear();
+  await showBanner();
 
   const { mode } = await prompts({
     type: 'select',
