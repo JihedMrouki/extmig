@@ -6,7 +6,22 @@
  * disabled a single static frame is printed instead.
  */
 
+import { createRequire } from 'node:module';
 import chalk from 'chalk';
+
+// ---------------------------------------------------------------------------
+// Version – resolved from the nearest package.json (works from both src/ and
+// the compiled dist/ tree).
+// ---------------------------------------------------------------------------
+const _require = createRequire(import.meta.url);
+function _getVersion(): string {
+  for (const p of ['../../../package.json', '../../package.json']) {
+    try { return _require(p).version as string; }
+    catch { /* next candidate */ }
+  }
+  return 'unknown';
+}
+const VERSION = _getVersion();
 
 // ---------------------------------------------------------------------------
 // Pixel font — every letter is exactly 6 rows tall.  Widths vary.
@@ -145,8 +160,11 @@ function styleLine(
 // ---------------------------------------------------------------------------
 // ANSI cursor helpers (TTY only)
 // ---------------------------------------------------------------------------
-const cursorUp  = (n: number) => `\x1b[${n}A`;
-const clearLine = '\x1b[2K';
+const cursorUp    = (n: number) => `\x1b[${n}A`;
+const clearLine   = '\x1b[2K';
+const saveCursor  = '\x1b[s';
+const restoreCursor = '\x1b[u';
+const moveTo      = (row: number, col: number) => `\x1b[${row};${col}H`;
 
 // ---------------------------------------------------------------------------
 // Animation constants
@@ -161,6 +179,18 @@ const INDENT        = '  ';
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Background sweep loop – keeps the colour gradient animated while the user
+// interacts with the CLI.  Call stopBanner() to tear it down explicitly; the
+// loop is also unref'd so it won't prevent a normal process exit.
+// ---------------------------------------------------------------------------
+let _loopId: ReturnType<typeof setInterval> | null = null;
+
+/** Stop the background banner animation (called automatically on exit). */
+export function stopBanner(): void {
+  if (_loopId) { clearInterval(_loopId); _loopId = null; }
+}
 
 /**
  * Print the animated EXTMIG banner and the author credit.
@@ -198,15 +228,40 @@ export async function showBanner(): Promise<void> {
     }
   }
 
-  // ── author credit ──────────────────────────────────────────────────
+  // ── author credit + version ────────────────────────────────────────
   const bannerWidth  = lines[0].length;
   const dividerChars = '╌'.repeat(bannerWidth);
   const credit       = 'developed by Jihed Mrouki';
   const creditPad    = ' '.repeat(Math.floor((bannerWidth - credit.length) / 2));
+  const versionStr   = `v${VERSION}`;
+  const versionPad   = ' '.repeat(Math.floor((bannerWidth - versionStr.length) / 2));
 
   console.log('');
   console.log(INDENT + chalk.hex('#4C1D95')(dividerChars));
   console.log(INDENT + creditPad + chalk.hex('#EC4899').bold(credit));
+  console.log(INDENT + versionPad + chalk.hex('#A855F7').dim(versionStr));
   console.log(INDENT + chalk.hex('#4C1D95')(dividerChars));
   console.log('');
+
+  // ── start background sweep loop (TTY only) ─────────────────────────
+  if (animate) {
+    let sweepOffset = (SWEEP_FRAMES - 1) * COLOR_SHIFT;
+
+    _loopId = setInterval(() => {
+      sweepOffset += COLOR_SHIFT;
+
+      process.stdout.write(saveCursor);
+      process.stdout.write(moveTo(1, 1));
+
+      for (const line of lines) {
+        process.stdout.write(
+          clearLine + INDENT + styleLine(line, TOTAL_FRAMES, GLITCH_FRAMES, sweepOffset) + '\n'
+        );
+      }
+
+      process.stdout.write(restoreCursor);
+    }, FRAME_MS);
+
+    _loopId.unref(); // don't keep the process alive just for the animation
+  }
 }
