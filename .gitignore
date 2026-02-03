@@ -1,0 +1,69 @@
+# =========================
+# Dependencies & Lockfiles
+# =========================
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# =========================
+# Build Artifacts
+# =========================
+dist/
+*.tsbuildinfo
+
+# =========================
+# IDE & Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.code-workspace
+
+# =========================
+# OS / System Files
+# =========================
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Icon?
+
+# =========================
+# Logs & Debug
+# =========================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.local
+.env.*.local
+
+# =========================
+# Test & Coverage
+# =========================
+coverage/
+.nyc_output/
+
+# =========================
+# Temporary / Runtime Files
+# =========================
+tmp/
+temp/
+*.tmp
+*.cache
+
+# =========================
+# Project-Specific
+# =========================
+.claude/
+docs/
