@@ -27,6 +27,7 @@ import {
   ResolveOptions,
   ExtendedResolutionResult,
 } from '../resolver/index.js';
+import { resolveJetBrainsToVSCode, CrossIDEResolutionResult } from '../resolver/cross-ide.js';
 import { scanIDE } from '../scanner/index.js';
 
 /**
@@ -81,6 +82,13 @@ export interface ExtensionDiffReport {
 
   /** Timestamp */
   generatedAt: Date;
+
+  /**
+   * Present when source is a JetBrains IDE and target is VS Code-based.
+   * Contains the full cross-IDE resolution breakdown so the caller can
+   * display needsReview / noEquivalent details.
+   */
+  crossIDEResolution?: CrossIDEResolutionResult;
 }
 
 /**
@@ -222,14 +230,74 @@ export async function diffIDEs(
     throw new Error(`Target IDE '${targetIDE}' not found or not available`);
   }
 
-  // Generate matches
+  const isSourceJetBrains = sourceIDE === 'intellij' || sourceIDE === 'androidstudio';
+  const isTargetJetBrains = targetIDE === 'intellij' || targetIDE === 'androidstudio';
+
+  // ---------------------------------------------------------------------------
+  // Cross-IDE path: JetBrains source → VS Code-based target.
+  // Extension IDs are in completely different namespaces, so the standard
+  // ID-based matcher is useless here.  Run the cross-IDE resolver first to
+  // translate plugin IDs into their VS Code equivalents, then match those
+  // translated IDs against the target's installed extensions as normal.
+  // ---------------------------------------------------------------------------
+  if (isSourceJetBrains && !isTargetJetBrains) {
+    const crossResult = await resolveJetBrainsToVSCode(
+      sourceScan.extensions,
+      options.targetMarketplace
+    );
+
+    // Synthesise source extensions from the auto-matched mappings using the
+    // VS Code IDs — everything downstream (matcher, installer) operates on
+    // these IDs transparently.
+    const resolvedSource: InstalledExtension[] = crossResult.autoMatched.map(m => ({
+      id: m.vsCodeId,
+      publisher: m.vsCodeExtension.publisher,
+      name: m.vsCodeExtension.name,
+      displayName: m.vsCodeExtension.displayName || m.vsCodeExtension.name,
+      version: m.vsCodeExtension.version,
+      path: '',
+      enabled: true,
+    }));
+
+    const matches = matchExtensions(
+      resolvedSource,
+      targetScan.extensions,
+      options.matchOptions
+    );
+
+    // Availability already confirmed by the cross-IDE resolver — skip the
+    // redundant marketplace round-trip inside generateDiff.
+    const diff = await generateDiff(matches, options.targetMarketplace, {
+      ...options,
+      skipAvailabilityCheck: true,
+    });
+
+    // Mark every source-only extension as available; the resolver already
+    // confirmed each one exists on the target marketplace.
+    for (const ext of diff.onlyInSource) {
+      ext.availableInTarget = true;
+    }
+
+    return {
+      sourceIDE,
+      targetIDE,
+      targetMarketplace: options.targetMarketplace,
+      diff,
+      matches,
+      generatedAt: new Date(),
+      crossIDEResolution: crossResult,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Standard path: both IDEs share the same extension ID space.
+  // ---------------------------------------------------------------------------
   const matches = matchExtensions(
     sourceScan.extensions,
     targetScan.extensions,
     options.matchOptions
   );
 
-  // Generate diff
   const diff = await generateDiff(matches, options.targetMarketplace, options);
 
   return {

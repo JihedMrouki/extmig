@@ -37,7 +37,7 @@ program
 program
   .command('diff <source> <target>')
   .description('Compare extensions between two IDEs')
-  .option('-m, --marketplace <type>', 'Target marketplace (openvsx, vscode)', 'openvsx')
+  .option('-m, --marketplace <type>', 'Target marketplace (openvsx, vscode). Defaults to the target IDE\'s native marketplace.')
   .option('-j, --json', 'Output as JSON')
   .action(diffCommand);
 
@@ -45,7 +45,7 @@ program
 program
   .command('sync <source> <target>')
   .description('Sync extensions from source to target IDE')
-  .option('-m, --marketplace <type>', 'Target marketplace (openvsx, vscode)', 'openvsx')
+  .option('-m, --marketplace <type>', 'Target marketplace (openvsx, vscode). Defaults to the target IDE\'s native marketplace.')
   .option('--no-dry-run', 'Actually install extensions (default is dry-run)')
   .option('-c, --concurrency <n>', 'Number of concurrent installations', '3')
   .option('--no-skip-unavailable', 'Fail if any extension is unavailable')

@@ -10,6 +10,8 @@ export const IDETypeSchema = z.enum([
   'cursor',           // Cursor
   'code-oss',         // Code - OSS
   'antigravity',      // AntiGravity
+  'intellij',         // IntelliJ IDEA
+  'androidstudio',    // Android Studio
 ]);
 
 export type IDEType = z.infer<typeof IDETypeSchema>;

@@ -19,6 +19,8 @@ const IDE_PROCESS_NAMES: Record<IDEType, string[]> = {
   cursor: ['Cursor', 'cursor'],
   'code-oss': ['code-oss', 'Code - OSS'],
   antigravity: ['Antigravity', 'antigravity'],
+  intellij: ['idea', 'IntelliJ IDEA'],
+  androidstudio: ['studio', 'Android Studio'],
 };
 
 /**
@@ -78,6 +80,8 @@ export function getCloseIDEMessage(ideType: IDEType): string {
     : ideType === 'cursor' ? 'Cursor'
     : ideType === 'code-oss' ? 'Code-OSS'
     : ideType === 'antigravity' ? 'AntiGravity'
+    : ideType === 'intellij' ? 'IntelliJ IDEA'
+    : ideType === 'androidstudio' ? 'Android Studio'
     : ideType;
 
   return `⚠️  ${ideName} is currently running. For best results, please close ${ideName} before installing extensions.`;

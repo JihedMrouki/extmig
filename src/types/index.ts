@@ -26,6 +26,8 @@ export {
   ExtensionManifest,
   ExtensionManifestSchema,
   ExtensionIdSchema,
+  JetBrainsPluginManifest,
+  JetBrainsPluginManifestSchema,
 } from './extension.js';
 
 // Marketplace types

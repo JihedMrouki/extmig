@@ -10,6 +10,15 @@ export interface DiffOptions {
   json?: boolean;
 }
 
+/** Default marketplace per target IDE — matches its native extension source. */
+const TARGET_MARKETPLACE_DEFAULTS: Record<string, MarketplaceType> = {
+  vscode:        'vscode',
+  cursor:        'vscode',
+  vscodium:      'openvsx',
+  'code-oss':    'openvsx',
+  antigravity:   'openvsx',
+};
+
 export async function diffCommand(
   sourceIDE: string,
   targetIDE: string,
@@ -17,7 +26,7 @@ export async function diffCommand(
 ) {
   try {
     // Validate IDE types
-    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity'];
+    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity', 'intellij', 'androidstudio'];
     if (!validIDEs.includes(sourceIDE) || !validIDEs.includes(targetIDE)) {
       console.error('Error: Invalid IDE type');
       console.error(`Valid options: ${validIDEs.join(', ')}`);
@@ -25,7 +34,7 @@ export async function diffCommand(
     }
 
     // Validate marketplace
-    const marketplace = (options.marketplace || 'openvsx') as MarketplaceType;
+    const marketplace = (options.marketplace || TARGET_MARKETPLACE_DEFAULTS[targetIDE] || 'openvsx') as MarketplaceType;
     const validMarketplaces = ['openvsx', 'vscode'];
     if (!validMarketplaces.includes(marketplace)) {
       console.error('Error: Invalid marketplace');
@@ -38,7 +47,7 @@ export async function diffCommand(
 
     const result = await diffIDEs(sourceIDE as IDEType, targetIDE as IDEType, {
       targetMarketplace: marketplace,
-      fallbackMarketplaces: marketplace === 'openvsx' ? ['vscode'] : ['openvsx'],
+      fallbackMarketplaces: marketplace === 'vscode' ? ['openvsx'] : ['vscode'],
     });
 
     if (options.json) {
@@ -79,6 +88,35 @@ export async function diffCommand(
       });
       if (result.diff.onlyInTarget.length > 10) {
         console.log(`... and ${result.diff.onlyInTarget.length - 10} more\n`);
+      }
+    }
+
+    // Cross-IDE resolution detail (only present when source is JetBrains)
+    if (result.crossIDEResolution) {
+      const { autoMatched, needsReview, noEquivalent } = result.crossIDEResolution;
+
+      console.log('=== Cross-IDE Resolution ===\n');
+      console.log(`  Auto-matched:  ${autoMatched.length}`);
+      console.log(`  Needs review:  ${needsReview.length}`);
+      console.log(`  No equivalent: ${noEquivalent.length}\n`);
+
+      if (needsReview.length > 0) {
+        console.log('--- Plugins needing manual selection ---\n');
+        needsReview.forEach((item, i) => {
+          console.log(`${i + 1}. [${item.jetbrainsId}] ${item.pluginName}`);
+          item.candidates.forEach((c, j) => {
+            console.log(`   ${j + 1}) ${c.id}  ${c.displayName || c.name}`);
+          });
+          console.log('');
+        });
+      }
+
+      if (noEquivalent.length > 0) {
+        console.log('--- Plugins with no VS Code equivalent ---\n');
+        noEquivalent.forEach((item, i) => {
+          console.log(`${i + 1}. [${item.jetbrainsId}] ${item.pluginName}`);
+        });
+        console.log('');
       }
     }
   } catch (error) {

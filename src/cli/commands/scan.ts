@@ -12,7 +12,7 @@ export interface ScanOptions {
 export async function scanCommand(ideType: string, options: ScanOptions) {
   try {
     // Validate IDE type
-    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity'];
+    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity', 'intellij', 'androidstudio'];
     if (!validIDEs.includes(ideType)) {
       console.error(`Error: Invalid IDE type "${ideType}"`);
       console.error(`Valid options: ${validIDEs.join(', ')}`);

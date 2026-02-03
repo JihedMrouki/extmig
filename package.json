@@ -1,6 +1,6 @@
 {
   "name": "extmig",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Synchronize VS Code extensions across VS Code-based IDEs using different marketplaces",
   "main": "dist/index.js",
   "type": "module",
@@ -33,6 +33,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "adm-zip": "^0.5.14",
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
     "ora": "^9.1.0",
@@ -40,6 +41,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.4.0",
     "@types/node": "^25.2.0",
     "@types/prompts": "^2.4.9",
     "typescript": "^5.9.3"

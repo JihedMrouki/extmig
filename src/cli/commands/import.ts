@@ -27,7 +27,7 @@ export async function importCommand(
 ) {
   try {
     // Validate IDE type
-    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity'];
+    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity', 'intellij', 'androidstudio'];
     if (!validIDEs.includes(targetIDE)) {
       console.error(`Error: Invalid IDE type "${targetIDE}"`);
       console.error(`Valid options: ${validIDEs.join(', ')}`);

@@ -7,6 +7,7 @@ import { ExtensionIdSchema } from './extension.js';
 export const MarketplaceTypeSchema = z.enum([
   'vscode',      // Microsoft Marketplace
   'openvsx',     // Open VSX Registry
+  'jetbrains',   // JetBrains Plugin Repository
 ]);
 
 export type MarketplaceType = z.infer<typeof MarketplaceTypeSchema>;

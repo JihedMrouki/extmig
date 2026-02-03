@@ -82,14 +82,17 @@ export function parseOrThrow<T>(schema: z.ZodSchema<T>, data: unknown): T {
 }
 
 /**
- * Validate extension ID format
+ * Validate extension ID format.
+ * Accepts both single-dot (publisher.name) and reverse-domain (com.org.plugin) formats.
  */
 export function isValidExtensionId(id: string): boolean {
-  return /^[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+$/.test(id);
+  return /^[a-zA-Z0-9-_]+(\.[a-zA-Z0-9-_]+)+$/.test(id);
 }
 
 /**
- * Parse extension ID into publisher and name
+ * Parse extension ID into publisher and name.
+ * For single-dot IDs (e.g. "esbenp.prettier-vscode"): publisher="esbenp", name="prettier-vscode".
+ * For reverse-domain IDs (e.g. "com.intellij.prettierPlugin"): publisher="com", name="intellij.prettierPlugin".
  */
 export function parseExtensionId(id: string): {
   publisher: string;
@@ -99,8 +102,11 @@ export function parseExtensionId(id: string): {
     return null;
   }
 
-  const [publisher, name] = id.split('.');
-  return { publisher, name };
+  const dotIndex = id.indexOf('.');
+  return {
+    publisher: id.slice(0, dotIndex),
+    name: id.slice(dotIndex + 1),
+  };
 }
 
 /**

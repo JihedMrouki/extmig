@@ -23,6 +23,7 @@ import {
   parseInstalledExtension,
   isValidExtensionDirectory,
   ExtensionParseError,
+  parseJetBrainsPlugin,
 } from './parser.js';
 
 /**
@@ -148,6 +149,69 @@ export async function scanExtensionsDirectory(
 }
 
 /**
+ * Scan JetBrains plugins in a plugins directory.
+ * Each entry may be an unpacked directory or a .jar file.
+ */
+export async function scanJetBrainsPlugins(
+  pluginsDir: string,
+  options: ScanOptions = {}
+): Promise<{
+  extensions: InstalledExtension[];
+  errors: Array<{ extensionPath: string; error: string }>;
+}> {
+  const opts = { ...DEFAULT_SCAN_OPTIONS, ...options };
+  const extensions: InstalledExtension[] = [];
+  const errors: Array<{ extensionPath: string; error: string }> = [];
+
+  try {
+    const entries = await fs.readdir(pluginsDir, { withFileTypes: true });
+
+    const entryPaths = entries
+      .filter(e => e.isDirectory() || (e.isFile() && e.name.endsWith('.jar')))
+      .map(e => path.join(pluginsDir, e.name));
+
+    // Process with concurrency control
+    const chunks: string[][] = [];
+    for (let i = 0; i < entryPaths.length; i += opts.concurrency) {
+      chunks.push(entryPaths.slice(i, i + opts.concurrency));
+    }
+
+    for (const chunk of chunks) {
+      const results = await Promise.allSettled(
+        chunk.map(entryPath => parseJetBrainsPlugin(entryPath))
+      );
+
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const entryPath = chunk[i];
+
+        if (result.status === 'fulfilled') {
+          if (result.value) {
+            extensions.push(result.value);
+          }
+          // null means no plugin.xml found — silently skip (e.g. .idea helpers)
+        } else {
+          const errorMsg = result.reason instanceof Error
+            ? result.reason.message
+            : 'Unknown error';
+          errors.push({ extensionPath: entryPath, error: errorMsg });
+          if (!opts.skipInvalid) throw result.reason;
+        }
+      }
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      errors.push({
+        extensionPath: pluginsDir,
+        error: `Failed to scan JetBrains plugins directory: ${error.message}`,
+      });
+    }
+  }
+
+  return { extensions, errors };
+}
+
+/**
  * Scan extensions for a specific IDE
  */
 export async function scanIDE(
@@ -160,10 +224,10 @@ export async function scanIDE(
     return null;
   }
 
-  const { extensions, errors } = await scanExtensionsDirectory(
-    detection.extensionsPath,
-    options
-  );
+  const isJetBrains = ideType === 'intellij' || ideType === 'androidstudio';
+  const { extensions, errors } = isJetBrains
+    ? await scanJetBrainsPlugins(detection.extensionsPath, options)
+    : await scanExtensionsDirectory(detection.extensionsPath, options);
 
   return {
     ide: detection.ide,

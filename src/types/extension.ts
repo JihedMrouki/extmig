@@ -5,8 +5,8 @@ import { z } from 'zod';
  * Format: publisher.name (e.g., "esbenp.prettier-vscode")
  */
 export const ExtensionIdSchema = z.string().regex(
-  /^[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+$/,
-  'Extension ID must be in format: publisher.name'
+  /^[a-zA-Z0-9-_]+(\.[a-zA-Z0-9-_]+)+$/,
+  'Extension ID must be in format: publisher.name (or reverse-domain like com.org.plugin)'
 );
 
 /**
@@ -80,3 +80,16 @@ export const ExtensionManifestSchema = z.object({
 });
 
 export type ExtensionManifest = z.infer<typeof ExtensionManifestSchema>;
+
+/**
+ * JetBrains plugin metadata extracted from META-INF/plugin.xml
+ */
+export const JetBrainsPluginManifestSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  version: z.string(),
+  vendor: z.string().optional(),
+  description: z.string().optional(),
+});
+
+export type JetBrainsPluginManifest = z.infer<typeof JetBrainsPluginManifestSchema>;

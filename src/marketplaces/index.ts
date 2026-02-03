@@ -7,6 +7,7 @@
 import { MarketplaceType, ResolvedExtension, ResolutionResult, Extension } from '../types/index.js';
 import * as OpenVSX from './openvsx.js';
 import * as VSCode from './vscode.js';
+import * as JetBrains from './jetbrains.js';
 
 /**
  * Marketplace client interface
@@ -39,6 +40,12 @@ export function getMarketplaceClient(marketplace: MarketplaceType): MarketplaceC
         queryExtensionById: OpenVSX.queryExtensionById,
         resolveExtensions: OpenVSX.resolveExtensions,
         searchExtensions: OpenVSX.searchExtensions,
+      };
+    case 'jetbrains':
+      return {
+        queryExtensionById: JetBrains.queryExtensionById,
+        resolveExtensions: JetBrains.resolveExtensions,
+        searchExtensions: JetBrains.searchExtensions,
       };
     default:
       throw new Error(`Unsupported marketplace: ${marketplace}`);
@@ -135,7 +142,9 @@ export async function searchOnMarketplace(
 // Re-export marketplace-specific errors
 export { OpenVSXError } from './openvsx.js';
 export { VSCodeMarketplaceError } from './vscode.js';
+export { JetBrainsError } from './jetbrains.js';
 
 // Re-export everything for convenience
 export * as OpenVSX from './openvsx.js';
 export * as VSCode from './vscode.js';
+export * as JetBrains from './jetbrains.js';

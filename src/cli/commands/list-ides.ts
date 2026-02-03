@@ -8,7 +8,7 @@ import type { IDEType } from '../../types/index.js';
 export async function listIDEsCommand() {
   console.log('Detecting installed IDEs...\n');
 
-  const ideTypes: IDEType[] = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity'];
+  const ideTypes: IDEType[] = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity', 'intellij', 'androidstudio'];
   const results: Array<{
     ide: string;
     available: boolean;

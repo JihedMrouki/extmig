@@ -14,7 +14,7 @@ export interface ExportOptions {
 export async function exportCommand(ideType: string, options: ExportOptions) {
   try {
     // Validate IDE type
-    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity'];
+    const validIDEs = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity', 'intellij', 'androidstudio'];
     if (!validIDEs.includes(ideType)) {
       console.error(`Error: Invalid IDE type "${ideType}"`);
       console.error(`Valid options: ${validIDEs.join(', ')}`);
