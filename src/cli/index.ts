@@ -24,6 +24,7 @@ program
 program
   .command('list')
   .description('List available VS Code-based IDEs on the system')
+  .option('-d, --debug', 'Show every path checked during detection')
   .action(listIDEsCommand);
 
 // Scan command

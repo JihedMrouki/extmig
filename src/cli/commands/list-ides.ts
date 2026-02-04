@@ -2,82 +2,119 @@
  * List IDEs command - Show available IDEs on the system
  */
 
-import { checkCLIAvailable, getCLIPath, getIDEVersion } from '../../core/installer/index.js';
-import type { IDEType } from '../../types/index.js';
+import * as path from 'path';
+import { access } from 'fs/promises';
+import { detectAllIDEs, getCurrentPlatform } from '../../core/scanner/paths.js';
+import type { Platform } from '../../types/index.js';
 
-export async function listIDEsCommand() {
+async function pathExists(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Mirrors the candidate layout in findCliInInstallPaths — debug output only. */
+function cliCandidatesInDir(installPath: string, cliCommand: string, platform: Platform): string[] {
+  if (platform === 'win32') {
+    return [
+      path.join(installPath, 'bin', `${cliCommand}.cmd`),
+      path.join(installPath, 'bin', `${cliCommand}.exe`),
+    ];
+  }
+  if (installPath.endsWith('.app')) {
+    return [
+      path.join(installPath, 'Contents', 'Resources', 'app', 'bin', cliCommand),
+      path.join(installPath, 'Contents', 'MacOS', cliCommand),
+    ];
+  }
+  return [path.join(installPath, 'bin', cliCommand)];
+}
+
+export async function listIDEsCommand(options: { debug?: boolean }) {
+  const platform = getCurrentPlatform();
+
   console.log('Detecting installed IDEs...\n');
 
-  const ideTypes: IDEType[] = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity', 'intellij', 'androidstudio'];
-  const results: Array<{
-    ide: string;
-    available: boolean;
-    cliPath?: string;
-    version?: string;
-  }> = [];
+  const results = await detectAllIDEs();
 
-  for (const ideType of ideTypes) {
-    try {
-      const available = await checkCLIAvailable(ideType);
+  // Three tiers:
+  //   available    – detected AND extensions directory exists (fully usable)
+  //   detectedOnly – install path or CLI found, but extensions dir missing
+  //   notFound     – nothing matched at all
+  const available    = results.filter(r =>  r.available);
+  const detectedOnly = results.filter(r => !r.available && r.ide.detected);
+  const notFound     = results.filter(r => !r.ide.detected);
 
-      if (available) {
-        const cliPath = await getCLIPath(ideType);
-        const version = await getIDEVersion(ideType);
-        results.push({
-          ide: ideType,
-          available: true,
-          cliPath: cliPath || undefined,
-          version: version || undefined,
-        });
-      } else {
-        results.push({
-          ide: ideType,
-          available: false,
-        });
-      }
-    } catch (error) {
-      results.push({
-        ide: ideType,
-        available: false,
-      });
+  if (available.length > 0) {
+    console.log('=== Available IDEs ===\n');
+    for (const r of available) {
+      console.log(`  ✓ ${r.ide.type}`);
+      if (r.ide.version)    console.log(`    Version:    ${r.ide.version}`);
+      if (r.ide.cliPath)    console.log(`    CLI:        ${r.ide.cliPath}`);
+      if (r.extensionsPath) console.log(`    Extensions: ${r.extensionsPath}`);
+      console.log('');
     }
   }
 
-  // Display results
-  const availableIDEs = results.filter(r => r.available);
-  const unavailableIDEs = results.filter(r => !r.available);
-
-  if (availableIDEs.length > 0) {
-    console.log('=== Available IDEs ===\n');
-    availableIDEs.forEach(ide => {
-      console.log(`✓ ${ide.ide}`);
-      if (ide.version) {
-        console.log(`  Version: ${ide.version}`);
-      }
-      if (ide.cliPath) {
-        console.log(`  CLI: ${ide.cliPath}`);
-      }
+  if (detectedOnly.length > 0) {
+    console.log('=== Detected (not fully usable) ===\n');
+    for (const r of detectedOnly) {
+      console.log(`  ⚠ ${r.ide.type}`);
+      console.log(`    CLI:        ${r.ide.cliPath || 'not found'}`);
+      console.log(`    Extensions: ${r.extensionsPath || 'not found'}`);
       console.log('');
-    });
+    }
   }
 
-  if (unavailableIDEs.length > 0) {
+  if (notFound.length > 0) {
     console.log('=== Not Found ===\n');
-    unavailableIDEs.forEach(ide => {
-      console.log(`✗ ${ide.ide}`);
-    });
+    for (const r of notFound) {
+      console.log(`  ✗ ${r.ide.type}`);
+    }
     console.log('');
   }
 
-  if (availableIDEs.length === 0) {
-    console.log('No VS Code-based IDEs found on this system.');
-    console.log('\nSupported IDEs:');
-    console.log('  - Visual Studio Code (vscode)');
-    console.log('  - VSCodium (vscodium)');
-    console.log('  - Cursor (cursor)');
-    console.log('  - Code-OSS (code-oss)');
-    console.log('  - AntiGravity (antigravity)');
+  if (available.length > 0) {
+    console.log(`Found ${available.length} IDE(s) available for syncing.`);
   } else {
-    console.log(`Found ${availableIDEs.length} IDE(s) available for syncing.`);
+    console.log('No IDEs fully available on this system.');
+    if (!options.debug) {
+      console.log('  Run:  extmig list --debug   to see every path that was checked.');
+    }
+  }
+
+  // --debug: full path audit — every path probed, existence shown
+  if (options.debug) {
+    console.log('\n=== Debug: path audit ===');
+    console.log(`Platform: ${platform}\n`);
+
+    for (const r of results) {
+      console.log(`── ${r.ide.type} (${r.ide.name}) ──`);
+
+      const installPaths = r.ide.installPaths[platform];
+      for (const p of installPaths) {
+        const exists = await pathExists(p);
+        console.log(`  install  ${exists ? '✓' : '✗'}  ${p}`);
+
+        // When the directory exists, show which CLI binaries we looked for inside it
+        if (exists) {
+          for (const candidate of cliCandidatesInDir(p, r.ide.cliCommand, platform)) {
+            console.log(`    cli    ${await pathExists(candidate) ? '✓' : '✗'}  ${candidate}`);
+          }
+        }
+      }
+
+      const extPaths = r.ide.extensionsPaths[platform];
+      for (const p of extPaths) {
+        console.log(`  exts     ${await pathExists(p) ? '✓' : '✗'}  ${p}`);
+      }
+
+      console.log(`  → resolved CLI:        ${r.ide.cliPath || '(none)'}`);
+      console.log(`  → resolved extensions: ${r.extensionsPath || '(none)'}`);
+      console.log('');
+    }
   }
 }
