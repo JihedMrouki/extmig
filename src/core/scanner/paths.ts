@@ -250,13 +250,18 @@ async function findCliCommand(command: string): Promise<string | undefined> {
  */
 async function getIdeVersion(cliPath: string): Promise<string | undefined> {
   try {
-    const { execFile } = await import('child_process');
     const { promisify } = await import('util');
-    const execFileAsync = promisify(execFile);
+    let stdout: string;
 
-    const { stdout } = await execFileAsync(cliPath, ['--version'], {
-      shell: getCurrentPlatform() === 'win32',
-    });
+    if (getCurrentPlatform() === 'win32') {
+      // Same quoting requirement as executeCommand — see comment there.
+      const { exec } = await import('child_process');
+      ({ stdout } = await promisify(exec)(`"${cliPath}" --version`));
+    } else {
+      const { execFile } = await import('child_process');
+      ({ stdout } = await promisify(execFile)(cliPath, ['--version']));
+    }
+
     const firstLine = stdout.trim().split('\n')[0].replace(/\r$/, '');
     return firstLine || undefined;
   } catch {

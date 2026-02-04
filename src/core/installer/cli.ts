@@ -4,12 +4,13 @@
  * Executes IDE CLI commands for extension installation.
  */
 
-import { execFile } from 'child_process';
+import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
 import { IDE, IDEType } from '../../types/index.js';
 import { detectIDE } from '../scanner/paths.js';
 
 const execFileAsync = promisify(execFile);
+const execAsync     = promisify(exec);
 
 /**
  * CLI execution error
@@ -50,12 +51,20 @@ export async function executeCommand(
   const timeout = options.timeout || 120000; // 2 minutes default
 
   try {
-    const { stdout, stderr } = await execFileAsync(cliPath, args, {
-      timeout,
-      cwd: options.cwd,
-      maxBuffer: 1024 * 1024 * 10, // 10MB buffer
-      shell: process.platform === 'win32', // .cmd wrappers need a shell on Windows
-    });
+    // On Windows .cmd wrappers require cmd.exe.  execFile + shell:true does not
+    // quote the file path, so paths with spaces (e.g. "C:\Users\First Last\...")
+    // break.  Use exec with an explicitly-quoted command string instead.
+    const { stdout, stderr } = process.platform === 'win32'
+      ? await execAsync(`"${cliPath}" ${args.join(' ')}`, {
+          timeout,
+          cwd: options.cwd,
+          maxBuffer: 1024 * 1024 * 10,
+        })
+      : await execFileAsync(cliPath, args, {
+          timeout,
+          cwd: options.cwd,
+          maxBuffer: 1024 * 1024 * 10,
+        });
 
     return {
       stdout: stdout.trim(),
