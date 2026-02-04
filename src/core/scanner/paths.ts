@@ -385,6 +385,11 @@ export async function detectIDE(ideType: IDEType): Promise<IDEDetectionResult> {
     }
   }
 
+  // Finding the extensions/plugins directory is itself evidence the IDE is installed
+  if (extensionsPath) {
+    detected = true;
+  }
+
   const ide: IDE = {
     ...config,
     detected,
