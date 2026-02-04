@@ -226,7 +226,19 @@ async function findCliCommand(command: string): Promise<string | undefined> {
     const whichCommand = isWindows ? 'where' : 'which';
 
     const { stdout } = await execFileAsync(whichCommand, [command]);
-    const cliPath = stdout.trim().split('\n')[0].replace(/\r$/, '');
+    let cliPath = stdout.trim().split('\n')[0].replace(/\r$/, '');
+
+    // `where` on Windows may return the extensionless shell-script that lives
+    // alongside the .cmd wrapper (e.g. bin/code instead of bin/code.cmd).
+    // execFile cannot run .cmd files without a shell, so prefer the .cmd path.
+    if (isWindows && cliPath && !cliPath.endsWith('.cmd') && !cliPath.endsWith('.exe')) {
+      const { access } = await import('fs/promises');
+      try {
+        await access(cliPath + '.cmd');
+        cliPath = cliPath + '.cmd';
+      } catch { /* .cmd variant doesn't exist, keep original */ }
+    }
+
     return cliPath || undefined;
   } catch {
     return undefined;
@@ -242,7 +254,9 @@ async function getIdeVersion(cliPath: string): Promise<string | undefined> {
     const { promisify } = await import('util');
     const execFileAsync = promisify(execFile);
 
-    const { stdout } = await execFileAsync(cliPath, ['--version']);
+    const { stdout } = await execFileAsync(cliPath, ['--version'], {
+      shell: getCurrentPlatform() === 'win32',
+    });
     const firstLine = stdout.trim().split('\n')[0].replace(/\r$/, '');
     return firstLine || undefined;
   } catch {

@@ -12,21 +12,19 @@ import { showBanner } from './banner.js';
 import { scanIDE } from '../core/scanner/index.js';
 import { diffIDEs } from '../core/diff/index.js';
 import { syncFromDiff } from '../core/installer/index.js';
-import { checkCLIAvailable, isIDERunning, getCloseIDEMessage } from '../core/installer/index.js';
+import { isIDERunning, getCloseIDEMessage } from '../core/installer/index.js';
+import { detectAllIDEs } from '../core/scanner/paths.js';
 import type { IDEType, MarketplaceType } from '../types/index.js';
 
-// Detect available IDEs
+// Detect available IDEs using the same full detection as `extmig list`
 async function detectIDEs(): Promise<IDEType[]> {
   const spinner = ora('Detecting installed IDEs...').start();
-  const ideTypes: IDEType[] = ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity'];
-  const available: IDEType[] = [];
 
-  for (const ide of ideTypes) {
-    const isAvailable = await checkCLIAvailable(ide);
-    if (isAvailable) {
-      available.push(ide);
-    }
-  }
+  const results = await detectAllIDEs();
+  const available = results
+    .filter(r => r.available)
+    .map(r => r.ide.type)
+    .filter((t): t is IDEType => ['vscode', 'vscodium', 'cursor', 'code-oss', 'antigravity'].includes(t));
 
   spinner.succeed(`Found ${available.length} IDE(s): ${available.join(', ')}`);
   return available;

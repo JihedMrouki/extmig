@@ -54,6 +54,7 @@ export async function executeCommand(
       timeout,
       cwd: options.cwd,
       maxBuffer: 1024 * 1024 * 10, // 10MB buffer
+      shell: process.platform === 'win32', // .cmd wrappers need a shell on Windows
     });
 
     return {
