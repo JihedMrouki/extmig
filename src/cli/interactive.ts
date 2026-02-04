@@ -188,7 +188,15 @@ async function autoMode() {
 
     if (syncReport.summary.failed > 0) {
       console.log();
-      console.log(chalk.yellow('⚠ Some extensions failed to install. See details above.'));
+      console.log(chalk.red('  Failed extensions:'));
+      for (const r of syncReport.summary.results) {
+        if (r.status === 'failed') {
+          console.log(chalk.red(`    ✗ ${r.extensionId}`));
+          if (r.error) {
+            console.log(chalk.gray(`      ${r.error}`));
+          }
+        }
+      }
     }
 
     // Post-installation instructions
@@ -197,7 +205,8 @@ async function autoMode() {
     console.log(chalk.gray(`  1. Restart ${targetIDE} to activate newly installed extensions`));
     console.log(chalk.gray(`  2. Check that all extensions are enabled in ${targetIDE}`));
     if (syncReport.summary.failed > 0) {
-      console.log(chalk.gray(`  3. Retry failed extensions after closing ${targetIDE}`));
+      console.log(chalk.gray(`  3. Close ${targetIDE}, then retry:`));
+      console.log(chalk.gray(`     extmig sync ${sourceIDE} ${targetIDE} --no-dry-run`));
     }
   } catch (error) {
     spinner.fail('Migration failed');
@@ -393,13 +402,27 @@ async function manualMode() {
       console.log(`  Failed: ${chalk.red(syncReport.summary.failed)}`);
       console.log(`  Skipped: ${chalk.yellow(syncReport.summary.skipped)}`);
 
+      if (syncReport.summary.failed > 0) {
+        console.log();
+        console.log(chalk.red('  Failed extensions:'));
+        for (const r of syncReport.summary.results) {
+          if (r.status === 'failed') {
+            console.log(chalk.red(`    ✗ ${r.extensionId}`));
+            if (r.error) {
+              console.log(chalk.gray(`      ${r.error}`));
+            }
+          }
+        }
+      }
+
       // Post-installation instructions
-      if (syncReport.summary.installed > 0) {
+      if (syncReport.summary.installed > 0 || syncReport.summary.failed > 0) {
         console.log();
         console.log(chalk.cyan('📌 Next Steps:'));
         console.log(chalk.gray(`  1. Restart ${targetIDE} to activate newly installed extensions`));
         if (syncReport.summary.failed > 0) {
-          console.log(chalk.gray(`  2. Close ${targetIDE} and retry failed extensions`));
+          console.log(chalk.gray(`  2. Close ${targetIDE}, then retry:`));
+          console.log(chalk.gray(`     extmig sync ${sourceIDE} ${targetIDE} --no-dry-run`));
         }
       }
     }
