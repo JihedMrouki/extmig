@@ -24,7 +24,17 @@ export function getCurrentPlatform(): Platform {
  * IDE Configuration Database
  * Defines install paths and extension directories for each IDE type
  */
-const localAppDataPrograms = path.join(os.homedir(), 'AppData', 'Local', 'Programs');
+
+// Use the real Windows environment variables so redirected / non-default
+// profile layouts (Citrix, SCCM, roaming profiles) resolve correctly.
+// On non-Windows platforms these are undefined; the values are only ever
+// consumed inside win32 path arrays, so the fallbacks are never reached there.
+const localAppDataPrograms = process.env.LOCALAPPDATA
+  ? path.join(process.env.LOCALAPPDATA, 'Programs')
+  : path.join(os.homedir(), 'AppData', 'Local', 'Programs');
+
+const programFiles     = process.env.PROGRAMFILES            || 'C:\\Program Files';
+const programFilesX86  = process.env['ProgramFiles(x86)']    || 'C:\\Program Files (x86)';
 
 const IDE_CONFIGS: Record<IDEType, Omit<IDE, 'detected' | 'version' | 'cliPath'>> = {
   vscode: {
@@ -35,7 +45,7 @@ const IDE_CONFIGS: Record<IDEType, Omit<IDE, 'detected' | 'version' | 'cliPath'>
     installPaths: {
       darwin: ['/Applications/Visual Studio Code.app'],
       linux: ['/usr/share/code', '/usr/bin/code'],
-      win32: ['C:\\Program Files\\Microsoft VS Code', path.join(localAppDataPrograms, 'Microsoft VS Code')],
+      win32: [path.join(programFiles, 'Microsoft VS Code'), path.join(programFilesX86, 'Microsoft VS Code'), path.join(localAppDataPrograms, 'Microsoft VS Code')],
     },
     extensionsPaths: {
       darwin: [path.join(os.homedir(), '.vscode/extensions')],
@@ -51,7 +61,7 @@ const IDE_CONFIGS: Record<IDEType, Omit<IDE, 'detected' | 'version' | 'cliPath'>
     installPaths: {
       darwin: ['/Applications/VSCodium.app'],
       linux: ['/usr/share/codium', '/usr/bin/codium'],
-      win32: ['C:\\Program Files\\VSCodium', path.join(localAppDataPrograms, 'VSCodium')],
+      win32: [path.join(programFiles, 'VSCodium'), path.join(programFilesX86, 'VSCodium'), path.join(localAppDataPrograms, 'VSCodium')],
     },
     extensionsPaths: {
       darwin: [path.join(os.homedir(), '.vscode-oss/extensions')],
@@ -67,7 +77,7 @@ const IDE_CONFIGS: Record<IDEType, Omit<IDE, 'detected' | 'version' | 'cliPath'>
     installPaths: {
       darwin: ['/Applications/Cursor.app'],
       linux: ['/usr/share/cursor', '/usr/bin/cursor'],
-      win32: ['C:\\Program Files\\Cursor', path.join(localAppDataPrograms, 'Cursor')],
+      win32: [path.join(programFiles, 'Cursor'), path.join(programFilesX86, 'Cursor'), path.join(localAppDataPrograms, 'Cursor')],
     },
     extensionsPaths: {
       darwin: [path.join(os.homedir(), '.cursor/extensions')],
@@ -83,7 +93,7 @@ const IDE_CONFIGS: Record<IDEType, Omit<IDE, 'detected' | 'version' | 'cliPath'>
     installPaths: {
       darwin: ['/Applications/Code - OSS.app'],
       linux: ['/usr/share/code-oss', '/usr/bin/code-oss'],
-      win32: ['C:\\Program Files\\Code - OSS', path.join(localAppDataPrograms, 'Code - OSS')],
+      win32: [path.join(programFiles, 'Code - OSS'), path.join(programFilesX86, 'Code - OSS'), path.join(localAppDataPrograms, 'Code - OSS')],
     },
     extensionsPaths: {
       darwin: [path.join(os.homedir(), '.vscode-oss/extensions')],
@@ -99,7 +109,7 @@ const IDE_CONFIGS: Record<IDEType, Omit<IDE, 'detected' | 'version' | 'cliPath'>
     installPaths: {
       darwin: ['/Applications/Antigravity.app', path.join(os.homedir(), '.antigravity/antigravity')],
       linux: ['/usr/share/antigravity', '/usr/bin/antigravity', path.join(os.homedir(), '.antigravity/antigravity')],
-      win32: ['C:\\Program Files\\AntiGravity', path.join(localAppDataPrograms, 'AntiGravity'), path.join(os.homedir(), '.antigravity\\antigravity')],
+      win32: [path.join(programFiles, 'AntiGravity'), path.join(programFilesX86, 'AntiGravity'), path.join(localAppDataPrograms, 'AntiGravity'), path.join(os.homedir(), '.antigravity\\antigravity')],
     },
     extensionsPaths: {
       darwin: [path.join(os.homedir(), '.antigravity/extensions')],
@@ -115,7 +125,14 @@ const IDE_CONFIGS: Record<IDEType, Omit<IDE, 'detected' | 'version' | 'cliPath'>
     installPaths: {
       darwin: ['/Applications/IntelliJ IDEA.app', '/Applications/IntelliJ IDEA Ultimate.app', '/Applications/IntelliJ IDEA Community.app'],
       linux: ['/usr/share/intellij-idea', '/usr/bin/idea', '/opt/idea'],
-      win32: ['C:\\Program Files\\JetBrains\\IntelliJ IDEA', 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Ultimate', 'C:\\Program Files\\JetBrains\\IntelliJ IDEA Community'],
+      win32: [
+        path.join(programFiles, 'JetBrains', 'IntelliJ IDEA'),
+        path.join(programFiles, 'JetBrains', 'IntelliJ IDEA Ultimate'),
+        path.join(programFiles, 'JetBrains', 'IntelliJ IDEA Community'),
+        path.join(programFilesX86, 'JetBrains', 'IntelliJ IDEA'),
+        path.join(programFilesX86, 'JetBrains', 'IntelliJ IDEA Ultimate'),
+        path.join(programFilesX86, 'JetBrains', 'IntelliJ IDEA Community'),
+      ],
     },
     extensionsPaths: {
       darwin: [],
@@ -131,7 +148,7 @@ const IDE_CONFIGS: Record<IDEType, Omit<IDE, 'detected' | 'version' | 'cliPath'>
     installPaths: {
       darwin: ['/Applications/Android Studio.app'],
       linux: ['/usr/share/android-studio', '/usr/bin/studio', '/opt/android-studio'],
-      win32: ['C:\\Program Files\\Google\\Android Studio', 'C:\\Program Files (x86)\\Google\\Android Studio'],
+      win32: [path.join(programFiles, 'Google', 'Android Studio'), path.join(programFilesX86, 'Google', 'Android Studio')],
     },
     extensionsPaths: {
       darwin: [],
@@ -154,6 +171,49 @@ async function pathExists(filePath: string): Promise<boolean> {
 }
 
 /**
+ * Probe known install directories for the CLI binary when PATH lookup fails.
+ *
+ * Candidate layout per platform:
+ *   Windows  – <installPath>/bin/<cmd>.cmd  |  <installPath>/bin/<cmd>.exe
+ *   macOS    – <installPath>/Contents/Resources/app/bin/<cmd>   (inside .app bundle)
+ *   Linux    – <installPath>/bin/<cmd>
+ */
+async function findCliInInstallPaths(
+  cliCommand: string,
+  installPaths: string[],
+  platform: Platform
+): Promise<string | undefined> {
+  for (const installPath of installPaths) {
+    let candidates: string[];
+
+    if (platform === 'win32') {
+      candidates = [
+        path.join(installPath, 'bin', `${cliCommand}.cmd`),
+        path.join(installPath, 'bin', `${cliCommand}.exe`),
+      ];
+    } else if (installPath.endsWith('.app')) {
+      // VS Code-based IDEs:  Contents/Resources/app/bin/<cmd>
+      // JetBrains IDEs:      Contents/MacOS/<cmd>
+      candidates = [
+        path.join(installPath, 'Contents', 'Resources', 'app', 'bin', cliCommand),
+        path.join(installPath, 'Contents', 'MacOS', cliCommand),
+      ];
+    } else {
+      candidates = [
+        path.join(installPath, 'bin', cliCommand),
+      ];
+    }
+
+    for (const candidate of candidates) {
+      if (await pathExists(candidate)) {
+        return candidate;
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
  * Find CLI command in PATH
  */
 async function findCliCommand(command: string): Promise<string | undefined> {
@@ -166,7 +226,7 @@ async function findCliCommand(command: string): Promise<string | undefined> {
     const whichCommand = isWindows ? 'where' : 'which';
 
     const { stdout } = await execFileAsync(whichCommand, [command]);
-    const cliPath = stdout.trim().split('\n')[0];
+    const cliPath = stdout.trim().split('\n')[0].replace(/\r$/, '');
     return cliPath || undefined;
   } catch {
     return undefined;
@@ -183,7 +243,7 @@ async function getIdeVersion(cliPath: string): Promise<string | undefined> {
     const execFileAsync = promisify(execFile);
 
     const { stdout } = await execFileAsync(cliPath, ['--version']);
-    const firstLine = stdout.trim().split('\n')[0];
+    const firstLine = stdout.trim().split('\n')[0].replace(/\r$/, '');
     return firstLine || undefined;
   } catch {
     return undefined;
@@ -194,16 +254,21 @@ async function getIdeVersion(cliPath: string): Promise<string | undefined> {
  * JetBrains config-dir base paths per IDE type and platform.
  * The actual versioned dir (e.g. IntelliJIdea2024.3) lives inside these.
  */
+// %APPDATA% is the roaming app-data directory; same class of env-var fix as
+// LOCALAPPDATA above — redirected profiles will have a non-default location.
+const appData = process.env.APPDATA
+  || path.join(os.homedir(), 'AppData', 'Roaming');
+
 const JETBRAINS_CONFIG_BASES: Record<string, Record<Platform, string>> = {
   intellij: {
     darwin: path.join(os.homedir(), 'Library', 'Application Support', 'JetBrains'),
     linux: path.join(os.homedir(), '.config', 'JetBrains'),
-    win32: path.join(os.homedir(), 'AppData', 'Roaming', 'JetBrains'),
+    win32: path.join(appData, 'JetBrains'),
   },
   androidstudio: {
     darwin: path.join(os.homedir(), 'Library', 'Application Support', 'Google'),
     linux: path.join(os.homedir(), '.config', 'Google'),
-    win32: path.join(os.homedir(), 'AppData', 'Roaming', 'Google'),
+    win32: path.join(appData, 'Google'),
   },
 };
 
@@ -294,8 +359,9 @@ export async function detectIDE(ideType: IDEType): Promise<IDEDetectionResult> {
     }
   }
 
-  // Try to find CLI command
-  const cliPath = await findCliCommand(config.cliCommand);
+  // Try to find CLI command – fall back to probing install directories
+  const cliPath = await findCliCommand(config.cliCommand)
+    ?? await findCliInInstallPaths(config.cliCommand, installPaths, platform);
   if (cliPath) {
     detected = true;
   }
